@@ -106,7 +106,7 @@
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         <!-- Banner / Announcement -->
-        <section class="mb-6 bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+        <section id="app-banner" class="mb-6 bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
             <div class="relative z-10 max-w-2xl">
                 <span class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-medium mb-3 border border-white/20">
                     <i class="fa-solid fa-graduation-cap mr-1"></i> ระบบประเมินและพัฒนาศักยภาพผู้เรียนรายบุคคล
@@ -814,7 +814,7 @@
         let prePostChartInstance = null;
         let radarChartInstance = null;
         // ===================== ตั้งค่า Supabase (แก้ 2 ค่านี้ให้ตรงกับโปรเจกต์ของคุณ) =====================
-        const SUPABASE_URL = 'https://eymjuyqfznoireyjsoru.supabase.co/';
+        const SUPABASE_URL = 'https://eymjuyqfznoireyjsoru.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5bWp1eXFmem5vaXJleWpzb3J1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUzOTYxOTQsImV4cCI6MjExMDk3MjE5NH0.bz71WA2pn1gAwxfkTPATvDL0eonvf5pkUkrEKL_iNdA';
         const EMAIL_DOMAIN = 'pyexam.example.com'; // โดเมนอีเมลภายในสำหรับล็อกอินด้วยรหัสนักเรียน (ไม่ต้องมีอยู่จริง และต้องไม่เปลี่ยนหลังเริ่มใช้งาน)
         // ================================================================================================
@@ -969,7 +969,7 @@
             }
             if (!email || !pass) { showToast('กรุณากรอกข้อมูลให้ครบ', 'warning'); return; }
             const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-            if (error) { showToast(error.message === 'Invalid login credentials' ? 'รหัสนักเรียน/อีเมล หรือรหัสผ่านไม่ถูกต้อง' : 'เข้าสู่ระบบไม่สำเร็จ: ' + error.message, 'error'); return; }
+            if (error) { showToast(error.message === 'Invalid login credentials' ? 'รหัสนักเรียน/อีเมล หรือรหัสผ่านไม่ถูกต้อง' : /not confirmed/i.test(error.message) ? 'บัญชีนี้ยังไม่ได้ยืนยันอีเมล ผู้ดูแลต้องปิด Confirm email และรันคำสั่งยืนยันบัญชีตาม README' : 'เข้าสู่ระบบไม่สำเร็จ: ' + error.message, 'error'); return; }
             const ok = await afterSignIn(data.user, false);
             if (ok && isT && !CAN_EDIT) { showToast('บัญชีนี้ไม่ใช่บัญชีครูผู้สอน', 'error'); await handleLogout(true); }
         }
@@ -982,7 +982,10 @@
             if (!document.getElementById('reg-consent').checked) { showToast('กรุณาติ๊กยินยอมการเก็บข้อมูลส่วนบุคคล', 'warning'); return; }
             const meta = { student_id: sid, firstname: g('reg-firstname'), lastname: g('reg-lastname'), class: document.getElementById('reg-class').value, room: document.getElementById('reg-room').value, number: document.getElementById('reg-number').value, dob: g('reg-dob'), phone: g('reg-phone'), email: g('reg-email'), avatar_type: selectedAvatarType, avatar_icon: selectedAvatarIcon, avatar_bg: selectedAvatarBg, avatar_src: uploadedAvatarBase64 || null };
             const { data, error } = await sb.auth.signUp({ email: sidEmail(sid), password: pw, options: { data: meta } });
-            if (error) { showToast(/registered|already|exists/i.test(error.message) ? `รหัสนักเรียน ${sid} สมัครไว้แล้ว กรุณาเข้าสู่ระบบ` : 'สมัครไม่สำเร็จ: ' + error.message, 'error'); return; }
+            if (error) { const m = String(error.message || '');
+                showToast(/registered|already|exists/i.test(m) ? `รหัสนักเรียน ${sid} สมัครไว้แล้ว กรุณาเข้าสู่ระบบ`
+                    : /rate limit/i.test(m) ? 'สมัครไม่สำเร็จ: Supabase ยังตั้งให้ส่งอีเมลยืนยัน (Confirm email) จึงติดขีดจำกัดการส่งอีเมล ผู้ดูแลต้องปิด Confirm email ตาม README ข้อ 3 แล้วรันคำสั่งยืนยันบัญชีที่ค้างอยู่'
+                    : 'สมัครไม่สำเร็จ: ' + m, 'error'); return; }
             if (!data.session) { showToast('สร้างบัญชีแล้ว แต่ระบบยังบังคับยืนยันอีเมล ผู้ดูแลต้องปิด "Confirm email" ใน Supabase (ดูคู่มือ)', 'warning'); return; }
             await afterSignIn(data.user, false);
         }
@@ -1331,6 +1334,8 @@
 
             const targetView = document.getElementById(`view-${viewId}`);
             if (targetView) targetView.classList.remove('hidden');
+            const bn = document.getElementById('app-banner');
+            if (bn) bn.classList.toggle('hidden', viewId === 'exam');
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
