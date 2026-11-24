@@ -450,6 +450,7 @@
                                 <tr>
                                     <th class="px-4 py-3 rounded-l-lg">นักเรียน</th>
                                     <th class="px-4 py-3">ชั้น/ห้อง/เลขที่</th>
+                                    <th class="px-4 py-3">ติดต่อ</th>
                                     <th class="px-4 py-3">สอบแล้ว (หน่วย)</th>
                                     <th class="px-4 py-3 text-center rounded-r-lg">การจัดการ</th>
                                 </tr>
@@ -549,26 +550,14 @@
 
                     <!-- Profile Picture / Avatar Selection -->
                     <div class="bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 space-y-2">
-                        <label class="block text-[11px] font-semibold text-indigo-900">เลือกรูปโปรไฟล์ หรือ อัปโหลดรูปภาพส่วนตัว</label>
+                        <label class="block text-[11px] font-semibold text-indigo-900">เลือกตัวละคร Pixel เป็นรูปโปรไฟล์</label>
                         <div class="flex items-center space-x-3">
                             <div id="reg-avatar-preview" class="w-12 h-12 rounded-full bg-indigo-600 text-white font-bold text-lg flex items-center justify-center overflow-hidden border-2 border-indigo-300 shadow shrink-0">
-                                <i class="fa-solid fa-user-astronaut text-xl"></i>
-                            </div>
+                                </div>
                             <div class="flex-grow space-y-1">
                                 <div class="flex flex-wrap gap-1.5" id="avatar-preset-container">
-                                    <button type="button" onclick="selectPresetAvatar('fa-user-astronaut', 'bg-indigo-600')" class="w-7 h-7 rounded-full bg-indigo-600 text-white text-xs hover:scale-110 transition shadow"><i class="fa-solid fa-user-astronaut"></i></button>
-                                    <button type="button" onclick="selectPresetAvatar('fa-laptop-code', 'bg-blue-600')" class="w-7 h-7 rounded-full bg-blue-600 text-white text-xs hover:scale-110 transition shadow"><i class="fa-solid fa-laptop-code"></i></button>
-                                    <button type="button" onclick="selectPresetAvatar('fa-user-ninja', 'bg-purple-600')" class="w-7 h-7 rounded-full bg-purple-600 text-white text-xs hover:scale-110 transition shadow"><i class="fa-solid fa-user-ninja"></i></button>
-                                    <button type="button" onclick="selectPresetAvatar('fa-user-graduate', 'bg-emerald-600')" class="w-7 h-7 rounded-full bg-emerald-600 text-white text-xs hover:scale-110 transition shadow"><i class="fa-solid fa-user-graduate"></i></button>
-                                    <button type="button" onclick="selectPresetAvatar('fa-robot', 'bg-amber-600')" class="w-7 h-7 rounded-full bg-amber-600 text-white text-xs hover:scale-110 transition shadow"><i class="fa-solid fa-robot"></i></button>
                                 </div>
-                                <div class="flex items-center space-x-2 pt-1">
-                                    <label class="px-2.5 py-1 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-[10px] font-semibold hover:bg-indigo-50 cursor-pointer transition shadow-sm inline-flex items-center">
-                                        <i class="fa-solid fa-upload mr-1"></i> อัปโหลดรูปภาพ
-                                        <input type="file" id="reg-avatar-upload" accept="image/*" onchange="handleAvatarImageUpload(event)" class="hidden">
-                                    </label>
-                                    <span class="text-[9px] text-slate-400">รองรับ JPG, PNG</span>
-                                </div>
+                                <p class="text-[10px] text-indigo-700/80">กดเลือกตัวละครที่ชอบ (เปลี่ยนภายหลังไม่ได้ในเวอร์ชันนี้)</p>
                             </div>
                         </div>
                     </div>
@@ -623,6 +612,10 @@
                         <div>
                             <label class="block text-[11px] font-semibold text-slate-700 mb-1">อีเมล</label>
                             <input type="email" id="reg-email" required placeholder="student@email.com" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">ID Line</label>
+                            <input type="text" id="reg-line" maxlength="40" placeholder="เช่น mylineid" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs">
                         </div>
                     </div>
 
@@ -814,7 +807,7 @@
         let prePostChartInstance = null;
         let radarChartInstance = null;
         // ===================== ตั้งค่า Supabase (แก้ 2 ค่านี้ให้ตรงกับโปรเจกต์ของคุณ) =====================
-        const SUPABASE_URL = 'https://eymjuyqfznoireyjsoru.supabase.co';
+        const SUPABASE_URL = 'https://eymjuyqfznoireyjsoru.supabase.co/';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5bWp1eXFmem5vaXJleWpzb3J1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUzOTYxOTQsImV4cCI6MjExMDk3MjE5NH0.bz71WA2pn1gAwxfkTPATvDL0eonvf5pkUkrEKL_iNdA';
         const EMAIL_DOMAIN = 'pyexam.example.com'; // โดเมนอีเมลภายในสำหรับล็อกอินด้วยรหัสนักเรียน (ไม่ต้องมีอยู่จริง และต้องไม่เปลี่ยนหลังเริ่มใช้งาน)
         // ================================================================================================
@@ -829,7 +822,7 @@
 
         function cleanStudent(o) {
             if (!o) return o; const c = { ...o };
-            ['firstname', 'lastname', 'class', 'room', 'number', 'studentId', 'dob', 'phone', 'email'].forEach(k => c[k] = esc(c[k]));
+            ['firstname', 'lastname', 'class', 'room', 'number', 'studentId', 'dob', 'phone', 'email', 'lineId'].forEach(k => c[k] = esc(c[k]));
             c.avatarIcon = safeCls(c.avatarIcon); c.avatarBg = safeCls(c.avatarBg);
             c.avatarSrc = /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(c.avatarSrc || '') ? c.avatarSrc : null;
             return c;
@@ -841,7 +834,7 @@
             if (Array.isArray(c.answers)) c.answers = c.answers.map(a => ({ ...a, userChoice: esc(a.userChoice), tag: esc(a.tag) }));
             return c;
         }
-        const mapProfile = p => cleanStudent({ uid: p.id, studentId: p.student_id, firstname: p.firstname, lastname: p.lastname, class: p.class, room: p.room, number: p.number, dob: p.dob, phone: p.phone, email: p.email, avatarType: p.avatar_type, avatarIcon: p.avatar_icon, avatarBg: p.avatar_bg, avatarSrc: p.avatar_src, mustChange: !!p.must_change_password });
+        const mapProfile = p => cleanStudent({ uid: p.id, studentId: p.student_id, firstname: p.firstname, lastname: p.lastname, class: p.class, room: p.room, number: p.number, dob: p.dob, phone: p.phone, email: p.email, lineId: p.line_id, avatarType: p.avatar_type, avatarIcon: p.avatar_icon, avatarBg: p.avatar_bg, avatarSrc: p.avatar_src, mustChange: !!p.must_change_password });
         function mapAttempt(a) {
             const p = a.profiles || {};
             return cleanResult({
@@ -980,7 +973,7 @@
             if (!/^[A-Za-z0-9_-]{3,20}$/.test(sid)) { showToast('รหัสนักเรียนใช้ได้เฉพาะ a-z 0-9 _ - ความยาว 3-20 ตัว', 'warning'); return; }
             if (pw.length < 6) { showToast('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร', 'warning'); return; }
             if (!document.getElementById('reg-consent').checked) { showToast('กรุณาติ๊กยินยอมการเก็บข้อมูลส่วนบุคคล', 'warning'); return; }
-            const meta = { student_id: sid, firstname: g('reg-firstname'), lastname: g('reg-lastname'), class: document.getElementById('reg-class').value, room: document.getElementById('reg-room').value, number: document.getElementById('reg-number').value, dob: g('reg-dob'), phone: g('reg-phone'), email: g('reg-email'), avatar_type: selectedAvatarType, avatar_icon: selectedAvatarIcon, avatar_bg: selectedAvatarBg, avatar_src: uploadedAvatarBase64 || null };
+            const meta = { student_id: sid, firstname: g('reg-firstname'), lastname: g('reg-lastname'), class: document.getElementById('reg-class').value, room: document.getElementById('reg-room').value, number: document.getElementById('reg-number').value, dob: g('reg-dob'), phone: g('reg-phone'), email: g('reg-email'), line_id: g('reg-line'), avatar_type: selectedAvatarType, avatar_icon: selectedAvatarIcon, avatar_bg: selectedAvatarBg, avatar_src: uploadedAvatarBase64 || null };
             const { data, error } = await sb.auth.signUp({ email: sidEmail(sid), password: pw, options: { data: meta } });
             if (error) { const m = String(error.message || '');
                 showToast(/registered|already|exists/i.test(m) ? `รหัสนักเรียน ${sid} สมัครไว้แล้ว กรุณาเข้าสู่ระบบ`
@@ -1257,8 +1250,8 @@
 
         // Temporary Profile Picture / Avatar State
         let selectedAvatarType = 'preset';
-        let selectedAvatarIcon = 'fa-user-astronaut';
-        let selectedAvatarBg = 'bg-indigo-600';
+        let selectedAvatarIcon = 'px-coder';
+        let selectedAvatarBg = 'bg-sky-200';
         let uploadedAvatarBase64 = null;
 
         // Toast Notification System
@@ -1286,21 +1279,41 @@
             }, 3500);
         }
 
+        // ===== Pixel Character Avatars =====
+        const PIXEL_CHARS = {"px-coder": {"name": "นักเขียนโค้ด", "bg": "bg-sky-200", "rows": ["...HHHHHH...", "..HHHHHHHH..", "..HSSSSSSH..", "..GEGSSGEG..", "..SSSSSSSS..", "...SSMMSS...", "..BBBBBBBB..", ".BBBBBBBBBB.", ".SBBBAABBBS.", ".SBBBBBBBBS.", "...PPPPPP...", "...PP..PP..."], "pal": {"H": "#5b3a1e", "S": "#f1c27d", "G": "#60a5fa", "E": "#111827", "M": "#b4533a", "B": "#3b82f6", "A": "#fde047", "P": "#1e3a8a"}}, "px-robot": {"name": "หุ่นยนต์", "bg": "bg-slate-200", "rows": [".....AA.....", "..GGGGGGGG..", "..GRRGGRRG..", "..GRRGGRRG..", "..GGGGGGGG..", "..GMMMMMMG..", "..BBBBBBBB..", ".BBBBBBBBBB.", ".SBBBAABBBS.", ".SBBBBBBBBS.", "...PPPPPP...", "...PP..PP..."], "pal": {"G": "#9ca3af", "A": "#ef4444", "R": "#22d3ee", "M": "#374151", "B": "#6b7280", "P": "#4b5563", "S": "#9ca3af"}}, "px-ninja": {"name": "นินจา", "bg": "bg-violet-200", "rows": ["...KKKKKK...", "..KKKKKKKK..", "..KSSSSSSK..", "..KSESSESK..", "..KKKKKKKK..", "...KKKKKK...", "..BBBBBBBB..", ".BBBBBBBBBB.", ".SBBBAABBBS.", ".SBBBBBBBBS.", "...PPPPPP...", "...PP..PP..."], "pal": {"K": "#111827", "S": "#f1c27d", "E": "#111827", "B": "#7c3aed", "A": "#ef4444", "P": "#4c1d95"}}, "px-wizard": {"name": "พ่อมด", "bg": "bg-indigo-200", "rows": [".....PP.....", "....PPPP....", "..PPPPPPPP..", "..HSSSSSSH..", "..HSESSESH..", "...HHHHHH...", "..BBBBBBBB..", ".BBBBBBBBBB.", ".SBBBAABBBS.", ".SBBBBBBBBS.", "...PPPPPP...", "...PP..PP..."], "pal": {"P": "#7c3aed", "H": "#e5e7eb", "S": "#f1c27d", "E": "#111827", "B": "#6d28d9", "A": "#fde047"}}, "px-astronaut": {"name": "นักบินอวกาศ", "bg": "bg-teal-200", "rows": ["...WWWWWW...", "..WWWWWWWW..", "..WVVVVVVW..", "..WVSSSSVW..", "..WVSESEVW..", "..WWVVVVWW..", "..BBBBBBBB..", ".BBBBBBBBBB.", ".SBBBAABBBS.", ".SBBBBBBBBS.", "...PPPPPP...", "...PP..PP..."], "pal": {"W": "#f3f4f6", "V": "#1e3a8a", "S": "#f1c27d", "E": "#111827", "B": "#f3f4f6", "A": "#fb923c", "P": "#e5e7eb"}}, "px-cat": {"name": "แมวส้ม", "bg": "bg-amber-200", "rows": ["..CC....CC..", "..CCCCCCCC..", "..CCCCCCCC..", "..CECCCCEC..", "..CCCNNCCC..", "...CWWWWC...", "..BBBBBBBB..", ".BBBBBBBBBB.", ".SBBBAABBBS.", ".SBBBBBBBBS.", "...PPPPPP...", "...PP..PP..."], "pal": {"C": "#fb923c", "E": "#111827", "N": "#f472b6", "W": "#fff7ed", "B": "#fb923c", "A": "#fff7ed", "P": "#c2410c", "S": "#fb923c"}}, "px-knight": {"name": "อัศวิน", "bg": "bg-stone-200", "rows": [".....RR.....", "..GGGGGGGG..", "..GGGGGGGG..", "..GKKKKKKG..", "..GGGGGGGG..", "...GGGGGG...", "..BBBBBBBB..", ".BBBBBBBBBB.", ".SBBBAABBBS.", ".SBBBBBBBBS.", "...PPPPPP...", "...PP..PP..."], "pal": {"R": "#ef4444", "G": "#94a3b8", "K": "#1f2937", "B": "#94a3b8", "A": "#fbbf24", "P": "#475569", "S": "#cbd5e1"}}, "px-girl": {"name": "สาวน้อย", "bg": "bg-pink-200", "rows": ["..HHHHHHHH..", ".HHHHHHHHHH.", ".HHSSSSSSHH.", ".HHSESSESHH.", ".HHSSSSSSHH.", ".HH.SMMS.HH.", "..BBBBBBBB..", ".BBBBBBBBBB.", ".SBBBAABBBS.", ".SBBBBBBBBS.", "...PPPPPP...", "...PP..PP..."], "pal": {"H": "#f472b6", "S": "#f1c27d", "E": "#111827", "M": "#b4533a", "B": "#a78bfa", "A": "#ffffff", "P": "#7c3aed"}}, "px-snake": {"name": "งูไพทอน", "bg": "bg-lime-200", "rows": ["...BBBBBB...", "..BBBBBBBB..", "..BWKBBWKB..", "..BBBBBBBB..", "..BBBRRBBB..", "...BBRRBB...", "...BBYYBB...", "..BBBBBBBB..", ".BBYYYYYYBB.", ".BBBBBBBBBB.", "..BBYYYYBB..", "....BBBB...."], "pal": {"B": "#3b82f6", "W": "#ffffff", "K": "#111827", "R": "#ef4444", "Y": "#facc15"}}, "px-alien": {"name": "เอเลี่ยน", "bg": "bg-emerald-200", "rows": ["..A......A..", "..AA....AA..", "..AAAAAAAA..", "..AKKAAKKA..", "..AKKAAKKA..", "...AAMMAA...", "..BBBBBBBB..", ".BBBBBBBBBB.", ".SBBBAABBBS.", ".SBBBBBBBBS.", "...PPPPPP...", "...PP..PP..."], "pal": {"A": "#4ade80", "K": "#111827", "M": "#166534", "B": "#22c55e", "P": "#16a34a", "S": "#4ade80"}}};
+        function pixelSVG(id) {
+            const c = PIXEL_CHARS[id]; if (!c) return '';
+            let r = '';
+            c.rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const ch = row[x]; if (ch !== '.' && c.pal[ch]) r += `<rect x="${x}" y="${y}" width="1" height="1" fill="${c.pal[ch]}"/>`; } });
+            return `<svg viewBox="0 0 12 12" class="w-full h-full block" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${r}</svg>`;
+        }
+        const isPx = id => typeof id === 'string' && id.startsWith('px-') && !!PIXEL_CHARS[id];
+        function pxBg(icon, bg) { return safeCls(bg) || (PIXEL_CHARS[icon] ? PIXEL_CHARS[icon].bg : 'bg-sky-200'); }
+        function renderAvatarPicker() {
+            const box = document.getElementById('avatar-preset-container'); if (!box) return;
+            box.className = 'grid grid-cols-5 gap-1.5';
+            box.innerHTML = Object.entries(PIXEL_CHARS).map(([id, c]) => `<button type="button" id="pxbtn-${id}" onclick="selectPresetAvatar('${id}','${c.bg}')" title="${c.name}" class="w-10 h-10 rounded-md ${c.bg} overflow-hidden border-2 border-transparent hover:scale-110 transition shadow">${pixelSVG(id)}</button>`).join('');
+            selectPresetAvatar('px-coder', PIXEL_CHARS['px-coder'].bg);
+        }
+
         // Avatar Functions
         function selectPresetAvatar(icon, bgClass) {
             selectedAvatarType = 'preset';
             selectedAvatarIcon = icon;
             selectedAvatarBg = bgClass;
             uploadedAvatarBase64 = null;
-
             const preview = document.getElementById('reg-avatar-preview');
             if (preview) {
-                preview.className = `w-12 h-12 rounded-full ${bgClass} text-white font-bold text-lg flex items-center justify-center overflow-hidden border-2 border-indigo-300 shadow shrink-0`;
-                preview.innerHTML = `<i class="fa-solid ${icon} text-xl"></i>`;
+                preview.className = `w-16 h-16 rounded-lg ${bgClass} overflow-hidden border-2 border-indigo-300 shadow shrink-0`;
+                preview.innerHTML = isPx(icon) ? pixelSVG(icon) : `<i class="fa-solid ${icon} text-xl"></i>`;
             }
+            document.querySelectorAll('#avatar-preset-container button').forEach(b => {
+                const on = b.id === 'pxbtn-' + icon;
+                b.classList.toggle('border-indigo-600', on); b.classList.toggle('ring-2', on); b.classList.toggle('ring-indigo-300', on); b.classList.toggle('border-transparent', !on);
+            });
         }
 
-        function handleAvatarImageUpload(event) {
+                function handleAvatarImageUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -1425,8 +1438,13 @@
                     avatarContainer.className = "w-8 h-8 rounded-full bg-slate-100 overflow-hidden shadow border border-white/20";
                     avatarContainer.innerHTML = `<img src="${currentUser.avatarSrc}" class="w-full h-full object-cover">`;
                 } else if (currentUser.avatarIcon) {
-                    avatarContainer.className = `w-8 h-8 rounded-full ${currentUser.avatarBg || 'bg-indigo-600'} flex items-center justify-center text-white font-bold text-xs shadow`;
-                    avatarContainer.innerHTML = `<i class="fa-solid ${currentUser.avatarIcon}"></i>`;
+                    if (isPx(currentUser.avatarIcon)) {
+                        avatarContainer.className = `w-9 h-9 rounded-md ${pxBg(currentUser.avatarIcon, currentUser.avatarBg)} overflow-hidden shadow border border-white/40`;
+                        avatarContainer.innerHTML = pixelSVG(currentUser.avatarIcon);
+                    } else {
+                        avatarContainer.className = `w-8 h-8 rounded-full ${currentUser.avatarBg || 'bg-indigo-600'} flex items-center justify-center text-white font-bold text-xs shadow`;
+                        avatarContainer.innerHTML = `<i class="fa-solid ${currentUser.avatarIcon}"></i>`;
+                    }
                 } else {
                     avatarContainer.className = "w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow";
                     avatarContainer.innerText = currentUser.firstname ? currentUser.firstname.charAt(0) : 'S';
@@ -1739,7 +1757,7 @@
                 if (student && student.avatarType === 'upload' && student.avatarSrc) {
                     avatarHTML = `<img src="${student.avatarSrc}" class="w-full h-full object-cover">`;
                 } else if (student && student.avatarIcon) {
-                    avatarHTML = `<i class="fa-solid ${student.avatarIcon}"></i>`;
+                    avatarHTML = isPx(student.avatarIcon) ? `<span class="block w-full h-full ${pxBg(student.avatarIcon, item.avatar_bg || item.avatarBg)}">${pixelSVG(student.avatarIcon)}</span>` : `<i class="fa-solid ${student.avatarIcon}"></i>`;
                 }
 
                 return `
@@ -2400,7 +2418,7 @@
             });
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 text-xs">ไม่พบข้อมูลนักเรียน</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 text-xs">ไม่พบข้อมูลนักเรียน</td></tr>`;
                 return;
             }
 
@@ -2410,6 +2428,7 @@
                     <tr class="hover:bg-slate-50">
                         <td class="px-4 py-3 font-semibold text-slate-800">${s.firstname} ${s.lastname}</td>
                         <td class="px-4 py-3 text-xs text-slate-500">${s.class}/${s.room} (เลขที่ ${s.number})</td>
+                        <td class="px-4 py-3 text-[11px] text-slate-500 leading-relaxed">${s.phone ? `<div><i class="fa-solid fa-phone mr-1"></i>${s.phone}</div>` : ''}${s.email ? `<div><i class="fa-solid fa-envelope mr-1"></i>${s.email}</div>` : ''}${s.lineId ? `<div><i class="fa-brands fa-line mr-1 text-emerald-600"></i>${s.lineId}</div>` : ''}</td>
                         <td class="px-4 py-3 font-bold text-indigo-600">${count} ครั้ง</td>
                         <td class="px-4 py-3 text-center">
                             <button onclick="viewStudentDetailAnalytics('${s.studentId}')" class="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold">
@@ -2435,6 +2454,7 @@
         // DOM Ready Initializer
         window.addEventListener('DOMContentLoaded', () => {
             populateCourseDropdowns(); renderHomeUnits(); renderLeaderboard();
+            renderAvatarPicker();
             initApp();
         });
     </script>
