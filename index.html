@@ -40,6 +40,10 @@
         html{scroll-padding-top:env(safe-area-inset-top,0px)} header.sticky{top:env(safe-area-inset-top,0px)}
         body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:45;background:#0f172a}
         body { font-family: 'Sarabun', sans-serif; }
+        .question-rich-editor:empty:before{content:attr(data-placeholder);color:#94a3b8;pointer-events:none}
+        .question-rich-editor{white-space:pre-wrap;overflow-wrap:anywhere}
+        .question-rich-editor pre,.question-rich-editor code{font-family:ui-monospace,monospace;background:#f1f5f9;padding:2px 4px;border-radius:4px}
+
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -1638,6 +1642,68 @@
             renderQuestionFields();
         }
 
+        function moveQuestionField(index, direction) {
+            const target = index + direction;
+            if (target < 0 || target >= tempQuestions.length) return;
+            [tempQuestions[index], tempQuestions[target]] = [tempQuestions[target], tempQuestions[index]];
+            renderQuestionFields();
+        }
+
+        // Rich text: เก็บ HTML เฉพาะแท็ก/รูปแบบที่อนุญาต เพื่อให้แสดงผลได้ทั้งหน้าแก้ไขและหน้าสอบ
+        function sanitizeQuestionHtml(value) {
+            const template = document.createElement('template');
+            template.innerHTML = String(value || '');
+            const allowed = new Set(['B','STRONG','I','EM','U','SPAN','BR','P','DIV','PRE','CODE','UL','OL','LI']);
+            const walk = node => {
+                [...node.childNodes].forEach(child => {
+                    if (child.nodeType === Node.ELEMENT_NODE) {
+                        if (!allowed.has(child.tagName)) {
+                            child.replaceWith(document.createTextNode(child.textContent || ''));
+                            return;
+                        }
+                        [...child.attributes].forEach(attr => {
+                            if (child.tagName !== 'SPAN' || attr.name !== 'style') child.removeAttribute(attr.name);
+                        });
+                        if (child.tagName === 'SPAN' && child.hasAttribute('style')) {
+                            const color = child.style.color;
+                            const bg = child.style.backgroundColor;
+                            child.removeAttribute('style');
+                            const safeColor = /^#[0-9a-f]{3,8}$/i.test(color) || /^rgb\([\d, ]+\)$/i.test(color);
+                            const safeBg = /^#[0-9a-f]{3,8}$/i.test(bg) || /^rgb\([\d, ]+\)$/i.test(bg);
+                            if (safeColor || safeBg) {
+                                const styles = [];
+                                if (safeColor) styles.push(`color:${color}`);
+                                if (safeBg) styles.push(`background-color:${bg}`);
+                                child.setAttribute('style', styles.join(';'));
+                            }
+                        }
+                        walk(child);
+                    } else if (child.nodeType !== Node.TEXT_NODE) child.remove();
+                });
+            };
+            walk(template.content);
+            return template.innerHTML;
+        }
+
+        function formatQuestionText(index, command, value = null) {
+            const editor = document.getElementById(`question-editor-${index}`);
+            if (!editor) return;
+            editor.focus();
+            document.execCommand(command, false, value);
+            tempQuestions[index].text = sanitizeQuestionHtml(editor.innerHTML);
+        }
+
+        function updateQuestionRichText(index) {
+            const editor = document.getElementById(`question-editor-${index}`);
+            if (editor && tempQuestions[index]) tempQuestions[index].text = sanitizeQuestionHtml(editor.innerHTML);
+        }
+
+        function questionEditorHtml(value) {
+            const raw = String(value || '');
+            return /<\/?(b|strong|i|em|u|span|br|p|div|pre|code|ul|ol|li)\b/i.test(raw)
+                ? sanitizeQuestionHtml(raw) : esc(raw).replace(/\n/g, '<br>');
+        }
+
         function updateTempOption(qIndex, optIndex, val) {
             if (tempQuestions[qIndex] && tempQuestions[qIndex].options) {
                 tempQuestions[qIndex].options[optIndex] = val;
@@ -1646,6 +1712,7 @@
 
         function saveManageQuestions() {
             if (!activeUnitForModal) return;
+            tempQuestions.forEach((q, idx) => updateQuestionRichText(idx));
 
             activeUnitForModal.questions = JSON.parse(JSON.stringify(tempQuestions)); saveQuestions(activeUnitForModal);
             showToast('บันทึกคลังข้อสอบในหน่วยนี้เรียบร้อยแล้ว', 'success');
@@ -1906,7 +1973,7 @@
                         <span class="px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-xs">ข้อที่ ${idx + 1}</span>
                         <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 font-medium text-xs">หมวด: ${q.tag || 'ทั่วไป'}</span>
                     </div>
-                    <h3 class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed">${q.text}</h3>
+                    <h3 class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed">${sanitizeQuestionHtml(q.text || '')}</h3>
                     <div class="pt-2">${inputHTML}</div>
                 </div>
             `;
@@ -2290,16 +2357,29 @@
 
             container.innerHTML = tempQuestions.map((q, idx) => `
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3 relative">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between gap-2">
                         <span class="font-bold text-xs text-indigo-600">ข้อที่ ${idx + 1}</span>
-                        <button type="button" onclick="removeQuestionField(${idx})" class="text-rose-500 hover:text-rose-700 text-xs font-bold">
-                            <i class="fa-solid fa-trash mr-1"></i> ลบข้อนี้
-                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="moveQuestionField(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="เลื่อนขึ้น" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-indigo-50 disabled:opacity-30"><i class="fa-solid fa-arrow-up"></i></button>
+                            <button type="button" onclick="moveQuestionField(${idx}, 1)" ${idx === tempQuestions.length - 1 ? 'disabled' : ''} title="เลื่อนลง" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-indigo-50 disabled:opacity-30"><i class="fa-solid fa-arrow-down"></i></button>
+                            <button type="button" onclick="removeQuestionField(${idx})" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2">
+                                <i class="fa-solid fa-trash mr-1"></i> ลบข้อนี้
+                            </button>
+                        </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
-                        <div class="sm:col-span-2">
+                        <div class="sm:col-span-2 sm:col-span-4">
                             <label class="block text-[11px] font-semibold text-slate-600 mb-1">โจทย์คำถาม</label>
-                            <input type="text" value="${esc(q.text || '')}" onchange="tempQuestions[${idx}].text = this.value" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs">
+                            <div class="flex flex-wrap items-center gap-1.5 p-2 bg-white border border-slate-200 border-b-0 rounded-t-lg">
+                                <button type="button" onmousedown="event.preventDefault()" onclick="formatQuestionText(${idx}, 'bold')" title="ตัวหนา" class="w-8 h-8 rounded border hover:bg-indigo-50 font-bold">B</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="formatQuestionText(${idx}, 'italic')" title="ตัวเอียง" class="w-8 h-8 rounded border hover:bg-indigo-50 italic">I</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="formatQuestionText(${idx}, 'underline')" title="ขีดเส้นใต้" class="w-8 h-8 rounded border hover:bg-indigo-50 underline">U</button>
+                                <label class="flex items-center gap-1 text-[11px] text-slate-600 px-2">สีตัวอักษร <input type="color" value="#1e293b" onchange="formatQuestionText(${idx}, 'foreColor', this.value)" class="w-7 h-7 border-0 bg-transparent cursor-pointer"></label>
+                                <label class="flex items-center gap-1 text-[11px] text-slate-600 px-2">ไฮไลท์ <input type="color" value="#fff176" onchange="formatQuestionText(${idx}, 'hiliteColor', this.value)" class="w-7 h-7 border-0 bg-transparent cursor-pointer"></label>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="formatQuestionText(${idx}, 'removeFormat')" class="px-2 h-8 rounded border hover:bg-slate-100 text-[11px]">ล้างรูปแบบ</button>
+                            </div>
+                            <div id="question-editor-${idx}" contenteditable="true" oninput="updateQuestionRichText(${idx})" class="question-rich-editor w-full min-h-[190px] max-h-[420px] overflow-y-auto px-3 py-3 border border-slate-300 rounded-b-lg bg-white text-sm leading-7 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-placeholder="${q.type === 'coding' ? 'พิมพ์โจทย์การเขียนโปรแกรมได้หลายบรรทัด เช่น สถานการณ์ เงื่อนไข และตัวอย่างผลลัพธ์...' : 'พิมพ์โจทย์คำถามได้หลายบรรทัด...'}">${questionEditorHtml(q.text || '')}</div>
+                            <p class="text-[10px] text-slate-500 mt-1">รองรับหลายบรรทัด ตัวหนา ตัวเอียง ขีดเส้นใต้ สีตัวอักษร และไฮไลท์ข้อความ</p>
                         </div>
                         <div>
                             <label class="block text-[11px] font-semibold text-indigo-700 mb-1"><i class="fa-solid fa-tag mr-1"></i>หัวข้อย่อย (วิเคราะห์จุดเด่น/ด้อย)</label>
